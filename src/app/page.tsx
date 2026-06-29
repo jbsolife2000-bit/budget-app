@@ -1,65 +1,132 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react"; // 👈 Import useEffect
+import { Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import AddTransaction from "./components/AddTransaction";
+import ExpenseChart from "./components/ExpenseChart";
+
+// Define the Transaction type
+export type Transaction = {
+  id: number;
+  category: string;
+  amount: number;
+  type: "income" | "expense";
+};
 
 export default function Home() {
+  // State for transactions
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    { id: 1, category: "Salary", amount: 2500, type: "income" },
+    { id: 2, category: "Rent", amount: 1200, type: "expense" },
+    { id: 3, category: "Groceries", amount: 450, type: "expense" },
+    { id: 4, category: "Transport", amount: 200, type: "expense" },
+    { id: 5, category: "Freelance", amount: 800, type: "income" },
+  ]);
+
+  // ✅ Load from localStorage on mount (before return)
+  useEffect(() => {
+    const saved = localStorage.getItem("transactions");
+    if (saved) {
+      try {
+        setTransactions(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved transactions", e);
+      }
+    }
+  }, []); // Empty dependency = run once
+
+  // ✅ Save to localStorage whenever transactions change
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
+
+  // Derived totals
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
+  const balance = totalIncome - totalExpenses;
+
+  // Add a new transaction
+  const handleAddTransaction = (newTx: Omit<Transaction, "id">) => {
+    const maxId = transactions.reduce((max, t) => Math.max(max, t.id), 0);
+    setTransactions([...transactions, { ...newTx, id: maxId + 1 }]);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+            <Wallet className="w-8 h-8 text-blue-600" /> BudgetFlow
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+          <p className="text-slate-500 mt-1">Track your money, build your wealth.</p>
+        </header>
+
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Balance Card */}
+          <div className="md:col-span-1 bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-2xl shadow-lg">
+            <p className="text-sm font-medium text-blue-200">Current Balance</p>
+            <h2 className="text-4xl font-extrabold mt-2">${balance.toLocaleString()}</h2>
+            <p className="text-xs mt-4 opacity-80">Updated just now</p>
+          </div>
+
+          {/* Income Card */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-500">Total Income</p>
+              <ArrowUpRight className="text-green-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-green-600 mt-4">+${totalIncome.toLocaleString()}</h3>
+            <div className="mt-4 h-2 bg-green-100 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 w-[70%]"></div>
+            </div>
+          </div>
+
+          {/* Expense Card */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-500">Total Expenses</p>
+              <ArrowDownRight className="text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-red-500 mt-4">-${totalExpenses.toLocaleString()}</h3>
+            <div className="mt-4 h-2 bg-red-100 rounded-full overflow-hidden">
+              <div className="h-full bg-red-500 w-[30%]"></div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Bottom Section: Form and Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <AddTransaction onAddTransaction={handleAddTransaction} />
+          <ExpenseChart />
         </div>
-      </main>
-    </div>
+
+        {/* Recent Transactions Section */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold mb-4">Recent Transactions</h2>
+          <ul>
+            {transactions.map((t) => (
+              <li key={t.id} className="flex justify-between border-b py-2 last:border-0">
+                <span className="text-slate-700">{t.category}</span>
+                <span
+                  className={
+                    t.type === "income"
+                      ? "text-green-600 font-semibold"
+                      : "text-red-500 font-semibold"
+                  }
+                >
+                  {t.type === "income" ? "+" : "-"}${t.amount.toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </main>
   );
 }

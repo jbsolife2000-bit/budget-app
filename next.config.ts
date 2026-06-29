@@ -1,7 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
+const nextConfig = {
+  turbopack: {
+    root: __dirname, // or process.cwd()
+  },
 };
-
-export default nextConfig;
+module.exports = nextConfig;
