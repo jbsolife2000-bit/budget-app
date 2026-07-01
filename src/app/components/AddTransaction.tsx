@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import type { Transaction } from "../page"; // import the type from page
+import type { Transaction } from "../page";
 
-// Props: we expect a callback to add a new transaction
 type AddTransactionProps = {
   onAddTransaction: (newTx: Omit<Transaction, "id">) => void;
 };
@@ -13,11 +12,12 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
+  // ✅ New state for date
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); // Today's date
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate input
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
       alert("Please enter a valid amount.");
@@ -27,17 +27,22 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
       alert("Please select a category.");
       return;
     }
+    if (!date) {
+      alert("Please select a date.");
+      return;
+    }
 
-    // Call the parent callback with the new transaction (id will be assigned in parent)
     onAddTransaction({
       category,
       amount: numericAmount,
       type,
+      date, // ✅ Include date
     });
 
     // Reset form
     setAmount("");
     setCategory("");
+    setDate(new Date().toISOString().split("T")[0]);
   };
 
   return (
@@ -47,7 +52,6 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Toggle between Income and Expense */}
         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
           <button
             type="button"
@@ -69,7 +73,6 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
           </button>
         </div>
 
-        {/* Amount Input */}
         <div>
           <label className="text-xs font-semibold text-slate-500 uppercase">Amount</label>
           <div className="relative mt-1">
@@ -86,7 +89,6 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
           </div>
         </div>
 
-        {/* Category Input */}
         <div>
           <label className="text-xs font-semibold text-slate-500 uppercase">Category</label>
           <select
@@ -102,6 +104,18 @@ export default function AddTransaction({ onAddTransaction }: AddTransactionProps
             <option value="Transport">Transportation</option>
             <option value="Entertainment">Entertainment</option>
           </select>
+        </div>
+
+        {/* ✅ Date picker */}
+        <div>
+          <label className="text-xs font-semibold text-slate-500 uppercase">Date</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+            className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
         </div>
 
         <button
